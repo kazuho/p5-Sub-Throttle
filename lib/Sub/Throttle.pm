@@ -1,84 +1,76 @@
 package Sub::Throttle;
 
-use 5.008006;
 use strict;
 use warnings;
+
+use Carp qw(croak);
+use List::Util qw(max);
+use Time::HiRes qw(time sleep);
 
 require Exporter;
 
 our @ISA = qw(Exporter);
-
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
-
-# This allows declaration	use Sub::Throttle ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
-
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	
+our @EXPORT_OK = qw(throttle);
+our %EXPORT_TAGS = (
+    all => [ @EXPORT_OK ],
 );
-
+our @EXPORT = ();
 our $VERSION = '0.01';
 
+sub throttle {
+    croak "too few arguments to throttle\n"
+        if @_ < 2;
+    my ($load, $func, @args) = @_;
+    my @ret;
+    my $start = time;
+    if (wantarray) {
+        @ret = $func->(@args);
+    } else {
+        $ret[0] = $func->(@args);
+    }
+    sleep(_sleep_secs($load, time - $start));
+    @ret;
+}
 
-# Preloaded methods go here.
+sub _sleep_secs {
+    my ($load, $elapsed) = @_;
+    max($elapsed, 0) * (1 - $load) / $load;
+}
 
 1;
-__END__
-# Below is stub documentation for your module. You'd better edit it!
-
 =head1 NAME
 
-Sub::Throttle - Perl extension for blah blah blah
+Sub::Throttle - Throttle load of perl function
 
 =head1 SYNOPSIS
 
-  use Sub::Throttle;
-  blah blah blah
+  use Sub::Throttle qw(throttle);
+  
+  my $load = 0.1;
+  
+  throttle($load, sub { ... });
+  throttle($load, \&subref, @args);
 
 =head1 DESCRIPTION
 
-Stub documentation for Sub::Throttle, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+Throttles the load of perl function by calling L<sleep>.
 
-Blah blah blah.
+=head1 METHODS
 
-=head2 EXPORT
+=head2 throttle($load, $subref [, @subargs])
 
-None by default.
-
-
-
-=head1 SEE ALSO
-
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+Calls L<sleep> after executing $subref with given @subargs so that the ratio of execution time becomes equal to $load.
 
 =head1 AUTHOR
 
-奥 一穂, E<lt>kazuho@apple.comE<gt>
+Kazuho Oku E<lt>kazuhooku at gmail.comE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008 by 奥 一穂
+Copyright (C) 2008 by Cybozu Labs, Inc.
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself, either Perl version 5.8.6 or,
 at your option, any later version of Perl 5 you may have available.
-
 
 =cut

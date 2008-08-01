@@ -1,15 +1,14 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl Sub-Throttle.t'
+use Test::More tests => 6;
+use Time::HiRes qw(time);
 
-#########################
+BEGIN { use_ok('Sub::Throttle', 'throttle') };
 
-# change 'tests => 1' to 'tests => last_test_to_print';
+is(Sub::Throttle::_sleep_secs(1, 1), 0);
+is(Sub::Throttle::_sleep_secs(1, 2), 0);
+is(Sub::Throttle::_sleep_secs(0.5, 1), 1);
+is(Sub::Throttle::_sleep_secs(0.25, 1), 3);
 
-use Test::More tests => 1;
-BEGIN { use_ok('Sub::Throttle') };
-
-#########################
-
-# Insert your test code below, the Test::More module is use()ed here so read
-# its man page ( perldoc Test::More ) for help writing this test script.
-
+my $start = time;
+throttle(0.25, sub { sleep 1 });
+my $elapsed = time - $start;
+ok(3 < $elapsed && $elapsed < 5);
