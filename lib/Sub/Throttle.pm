@@ -15,7 +15,7 @@ our %EXPORT_TAGS = (
     all => [ @EXPORT_OK ],
 );
 our @EXPORT = ();
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub throttle {
     croak "too few arguments to throttle\n"
@@ -29,7 +29,7 @@ sub throttle {
         $ret[0] = $func->(@args);
     }
     sleep(_sleep_secs($load, time - $start));
-    @ret;
+    wantarray ? @ret : $ret[0];
 }
 
 sub _sleep_secs {
